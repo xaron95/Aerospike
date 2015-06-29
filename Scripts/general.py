@@ -5,10 +5,10 @@ es = Elasticsearch()
 x = []
 y = []
 files = []
-temp1 = es.search(index='logstash*',size=100000000)
+temp1 = es.search(index='logstash*',size=100000000,q='_type:"logs"')
 temp2 = temp1['hits']['hits']
-for t in temp2:
-	files.append(t['_source']['filename'])
+for temp in temp2:
+	files.append(temp['_source']['filename'])
 file_set = set(files)
 files = list(file_set)
 for j in range(1,8):
@@ -41,11 +41,8 @@ for j in range(1,8):
 					other_htbt_diff.append([other_htbt[i][0]-other_htbt[temp][0],other_htbt[temp][2]])
 					temp = i
 				i+=1
-		while i < len(self_htbt):
-			self_htbt_diff.append(self_htbt[i][0]-self_htbt[i-1][0])
-			other_htbt_diff.append(other_htbt[i][0]-other_htbt[i-1][0])
-			i += 1
 		index = "logstash-meta"
+		print self_htbt_diff
 		for i in range(0,len(self_htbt_diff)):
 			es.create(index="logstash-meta",doc_type="info",body={"self_diff":int(self_htbt_diff[i][0]),"other_diff":int(other_htbt_diff[i][0]),"@timestamp":self_htbt[i][1],"tag":'htbt',"filename":self_htbt[i][2]})
 #for i in range(1,len(self_htbt)):
@@ -56,7 +53,7 @@ for j in range(1,8):
 #print x
 #print y
 #for i in range(1,len(self_htbt)):
-data = {"title":"htbt-diff-sc","visState":"{\"type\":\"line\",\"params\":{\"shareYAxis\":true,\"addTooltip\":true,\"addLegend\":true,\"showCircles\":true,\"smoothLines\":false,\"interpolate\":\"linear\",\"scale\":\"linear\",\"drawLinesBetweenPoints\":true,\"radiusRatio\":9,\"times\":[],\"addTimeMarker\":false,\"defaultYExtents\":false,\"setYExtents\":false,\"yAxis\":{}},\"aggs\":[{\"id\":\"1\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"other_diff\"}},{\"id\":\"2\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"self_diff\"}},{\"id\":\"3\",\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"@timestamp\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"4\",\"type\":\"filters\",\"schema\":\"split\",\"params\":{\"filters\":[{\"input\":{\"query\":{\"query_string\":{\"query\":\"filename:\\\"a1\\\"\",\"analyze_wildcard\":true}}}},{\"input\":{\"query\":{\"query_string\":{\"query\":\"filename:\\\"a2\\\"\",\"analyze_wildcard\":true}}}}],\"row\":true}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-m*\",\"query\":{\"query_string\":{\"query\":\"*\",\"analyze_wildcard\":true}},\"filter\":[]}"}}
+data = {"title":"htbt-diff-sc","visState":"{\"type\":\"line\",\"params\":{\"shareYAxis\":true,\"addTooltip\":true,\"addLegend\":true,\"showCircles\":true,\"smoothLines\":false,\"interpolate\":\"linear\",\"scale\":\"linear\",\"drawLinesBetweenPoints\":true,\"radiusRatio\":9,\"times\":[],\"addTimeMarker\":false,\"defaultYExtents\":false,\"setYExtents\":false,\"yAxis\":{}},\"aggs\":[{\"id\":\"1\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"other_diff\"}},{\"id\":\"2\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"self_diff\"}},{\"id\":\"3\",\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"@timestamp\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"4\",\"type\":\"filters\",\"schema\":\"split\",\"params\":{\"filters\":[{\"input\":{\"query\":{\"query_string\":{\"query\":\"filename:\\\"a1\\\"\",\"analyze_wildcard\":true}}}},{\"input\":{\"query\":{\"query_string\":{\"query\":\"filename:\\\"a2\\\"\",\"analyze_wildcard\":true}}}}],\"row\":true}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"query\":\"*\",\"analyze_wildcard\":true}},\"filter\":[]}"}}
 es.create(index=".kibana",doc_type="visualization",id="htbt_diff_script",body=data)
 data = {"title":"trans_in_progress-sc","visState":"{\"type\":\"line\",\"params\":{\"addLegend\":true,\"addTimeMarker\":false,\"addTooltip\":true,\"defaultYExtents\":false,\"drawLinesBetweenPoints\":true,\"interpolate\":\"linear\",\"radiusRatio\":9,\"scale\":\"linear\",\"setYExtents\":false,\"shareYAxis\":true,\"showCircles\":true,\"smoothLines\":false,\"times\":[],\"yAxis\":{}},\"aggs\":[{\"id\":\"2\",\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"@timestamp\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"4\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"wr\"}},{\"id\":\"5\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"prox\"}},{\"id\":\"6\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"bq\"}},{\"id\":\"7\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"dq\"}},{\"id\":\"8\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"wait\"}},{\"id\":\"9\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"q\"}},{\"id\":\"10\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"iq\"}},{\"id\":\"11\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"fab_ever_closed\"}},{\"id\":\"12\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"fab_recent_open\"}},{\"id\":\"13\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"fab_ever_opened\"}},{\"id\":\"14\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"fds_ever_closed\"}},{\"id\":\"15\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"fds_ever_opened\"}},{\"id\":\"16\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"fab_recent_open\"}},{\"id\":\"17\",\"type\":\"filters\",\"schema\":\"split\",\"params\":{\"filters\":[{\"input\":{\"query\":{\"query_string\":{\"query\":\"filename:\\\"a2\\\"\",\"analyze_wildcard\":true}}}},{\"input\":{\"query\":{\"query_string\":{\"query\":\"filename:\\\"a1\\\"\",\"analyze_wildcard\":true}}}}],\"row\":true}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
 es.create(index=".kibana",doc_type="visualization",id="trans_in_progress_script",body=data)
@@ -74,5 +71,6 @@ data = {"title":"cluster_mig-sc","visState":"{\"type\":\"line\",\"params\":{\"ad
 es.create(index=".kibana",doc_type="visualization",id="cluster_mig_script",body=data)
 
 
-data = {"title":"temp_dashboard","hits":0,"description":"","panelsJSON":"[{\"col\":1,\"id\":\"cluster_mig_script\",\"row\":1,\"size_x\":4,\"size_y\":5,\"type\":\"visualization\"},{\"col\":5,\"id\":\"data_obj_mig_script\",\"row\":1,\"size_x\":4,\"size_y\":5,\"type\":\"visualization\"},{\"col\":9,\"id\":\"migration_script\",\"row\":1,\"size_x\":4,\"size_y\":5,\"type\":\"visualization\"},{\"col\":1,\"id\":\"hist_viz_script\",\"row\":6,\"size_x\":12,\"size_y\":5,\"type\":\"visualization\"},{\"col\":1,\"id\":\"mem_usage_script\",\"row\":11,\"size_x\":12,\"size_y\":5,\"type\":\"visualization\"},{\"col\":1,\"id\":\"nsup_viz_script\",\"row\":16,\"size_x\":12,\"size_y\":5,\"type\":\"visualization\"},{\"col\":1,\"id\":\"trans_in_progress_script\",\"row\":21,\"size_x\":12,\"size_y\":7,\"type\":\"visualization\"},{\"id\":\"htbt_diff_script\",\"type\":\"visualization\",\"size_x\":12,\"size_y\":6,\"col\":1,\"row\":28}]","version":1,"timeRestore":false,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"filter\":[{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}}}]}"}}
+data = {"title":"temp_dashboard","hits":0,"description":"","panelsJSON":"[{\"col\":1,\"id\":\"cluster_mig_script\",\"row\":1,\"size_x\":4,\"size_y\":5,\"type\":\"visualization\"},{\"col\":5,\"id\":\"data_obj_mig_script\",\"row\":1,\"size_x\":4,\"size_y\":5,\"type\":\"visualization\"},{\"col\":9,\"id\":\"migration_script\",\"row\":1,\"size_x\":4,\"size_y\":5,\"type\":\"visualization\"},{\"col\":1,\"id\":\"hist_viz_script\",\"row\":6,\"size_x\":12,\"size_y\":5,\"type\":\"visualization\"},{\"col\":1,\"id\":\"mem_usage_script\",\"row\":11,\"size_x\":12,\"size_y\":5,\"type\":\"visualization\"},{\"col\":1,\"id\":\"nsup_viz_script\",\"row\":16,\"size_x\":12,\"size_y\":5,\"type\":\"visualization\"},{\"col\":1,\"id\":\"trans_in_progress_script\",\"row\":21,\"size_x\":12,\"size_y\":7,\"type\":\"visualization\"},{\"id\":\"htbt_diff_script\",\"type\":\"visualization\",\"size_x\":12,\"size_y\":6,\"col\":1,\"row\":28}]","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"filter\":[{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}}}]}"}}
 es.create(index=".kibana",doc_type="dashboard",id="temp_dashboard_script",body=data)
+
