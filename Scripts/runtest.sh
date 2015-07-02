@@ -26,7 +26,8 @@ function start {
 	    mkdir "$LOGSTASH_PATH/patterns"
 	    echo "Writing extra patterns in $LOGSTASH_PATH/patterns/extra_patterns"
 		echo 'SOURCE %{WORD}\.%{WORD}
-		TIME_LOG %{MONTH} %{MONTHDAY} %{YEAR} %{TIME} %{WORD}' > $LOGSTASH_PATH/patterns/extra_patterns
+		TIME_LOG %{MONTH} %{MONTHDAY} %{YEAR} %{TIME} %{WORD}
+		LOG_TYPE %{WORD}|(%{WORD}:%{WORD})' > $LOGSTASH_PATH/patterns/extra_patterns
 	fi
 
 	#Running elk stack afresh
@@ -34,13 +35,14 @@ function start {
 	read OP
 	$ELK_PATH/elasticsearch-1.6.0/bin/elasticsearch >/dev/null 2>&1 &
 	#Waiting for elasticsearch to open completely
-	sleep 10
 	if [[ "$OP" == 'y' ]]; then
+		sleep 10
 		curl -XDELETE 'http://localhost:9200/logstash*';
 		curl -XDELETE 'http://localhost:9200/.kibana';
 		echo "Elasticsearch cleared!"
 	fi
 	$ELK_PATH/kibana-4.1.0-darwin-x64/bin/kibana >/dev/null 2>&1 &
+	$LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf >/dev/null 2>&1 &
 	#if [[ $FLAG == 1 ]]; then
 		#$LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf >/dev/null 2>&1 &
 	#	cat $LOG_PATH/*.s | $LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf
@@ -48,7 +50,10 @@ function start {
 	#	$LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf < $LOG_PATH
 	#fi
 	#python $LOGSTASH_PATH/htbt.py
-	$LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf #>/dev/null 2>&1 &
+	#cat $LOG_PATH/*.log | $LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf
+	echo "Loading..."
+	sleep 30
+	#python $LOGSTASH_PATH/test.py
 	echo "ELK stack started!"
 	echo "Go to browser and type following url's to see ELK working:"
 	echo "For Elasticsearch: localhost:9200/_search?pretty"
@@ -56,10 +61,14 @@ function start {
 }
 function stop {
 	ps -ef &> temp
+	if grep -q "kibana" temp; then
+		grep "kibana" temp | kill -KILL `awk '{print $2}'`
+	fi
+	if grep -q "elasticsearch" temp; then
+		grep "elasticsearch" temp | kill -KILL `awk '{print $2}'`
+	fi
 	if grep -q "logstash" temp; then
 		grep "logstash" temp | kill -KILL `awk '{print $2}'`
-		grep "elasticsearch" temp | kill -KILL `awk '{print $2}'`
-		grep "kibana" temp | kill -KILL `awk '{print $2}'`
 	fi
 	rm -rf temp
 	echo "Stopping ELK stack..."
