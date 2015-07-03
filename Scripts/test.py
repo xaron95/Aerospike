@@ -1,13 +1,18 @@
 from elasticsearch import Elasticsearch
 
-es = Elasticsearch()
+#Post processing
 x = es.search(index="logstash-*",size=10000000,q='_type:logs')
 y = x['hits']['hits']
-t = []
+lo = y[0]['_source']['@timestamp']
+hi = lo
+files = set()
 for z in y:
-	t.append(z['_source']['@timestamp'])
-lo = min(t)
-hi = max(t)
+	if z['_source']['@timestamp'] < lo:
+		lo = z['_source']['@timestamp']
+	if z['_source']['@timestamp'] > hi:
+		hi = z['_source']['@timestamp']
+	files.add(z['_source']['filename'])
+files = list(files)
 
 #Migrations viz
 data = {"title":"migrations-viz","visState":"{\"type\":\"line\",\"params\":{\"addLegend\":true,\"addTimeMarker\":false,\"addTooltip\":true,\"defaultYExtents\":false,\"drawLinesBetweenPoints\":true,\"interpolate\":\"linear\",\"radiusRatio\":9,\"scale\":\"linear\",\"setYExtents\":false,\"shareYAxis\":true,\"showCircles\":true,\"smoothLines\":false,\"times\":[],\"yAxis\":{}},\"aggs\":[{\"id\":\"1\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"incoming_mig\"}},{\"id\":\"2\",\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"@timestamp\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"type\":\"filters\",\"schema\":\"group\",\"params\":{\"filters\":[{\"input\":{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"filename:\\\"a1\\\"\"}}}},{\"input\":{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"filename:\\\"a2\\\"\"}}}}]}},{\"id\":\"4\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"outgoing_mig\"}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
