@@ -1,31 +1,27 @@
-#/usr/local/elk/logstash-1.5.0/bin/logstash -f /usr/local/elk/logstash-1.5.0/general.conf < /tmp/log.s
-#python /Users/kutemangesh/Desktop/scripts/htbt.py
-#http://localhost:5601/#/visualize/create?type=line&indexPattern=logstash-m*&_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:now-1d,mode:relative,to:now))&_a=(filters:!(),linked:!f,query:(query_string:(analyze_wildcard:!t,query:'*')),vis:(aggs:!((id:'1',params:(field:other_diff),schema:metric,type:avg),(id:'2',params:(field:self_diff),schema:metric,type:avg),(id:'3',params:(customInterval:'2h',extended_bounds:(),field:'@timestamp',interval:second,min_doc_count:1),schema:segment,type:date_histogram)),listeners:(),params:(addLegend:!t,addTimeMarker:!f,addTooltip:!t,defaultYExtents:!f,drawLinesBetweenPoints:!t,interpolate:linear,radiusRatio:9,scale:linear,setYExtents:!f,shareYAxis:!t,showCircles:!t,smoothLines:!f,times:!(),yAxis:()),type:line))
-
 #!/bin/bash
 #Log file destination entered by user
 
 function start {
-	FLAG=0
 	echo 'Enter path of log file(s)'
 	read LOG_PATH
+	LOGSTASH_PATH="/usr/local/elk/logstash-1.5.0"
+	ELK_PATH="/usr/local/elk"
 	if [[ -d $LOG_PATH ]]; then
 	    echo "$LOG_PATH is a directory"
-	    FLAG=1
+	    sed -i '' "s|	path => .*|	path => $LOG_PATH/\*.log|" $LOGSTASH_PATH/general.conf
 	elif [[ -f $LOG_PATH ]]; then
 	    echo "$LOG_PATH is a file"
+	    sed -i '' "s|	path => .*|	path => $LOG_PATH|" $LOGSTASH_PATH/general.conf
 	else
 	    echo "$LOG_PATH is not valid"
 	    exit 1
 	fi
-	LOGSTASH_PATH="/usr/local/elk/logstash-1.5.0"
-	ELK_PATH="/usr/local/elk"
 	#Making a directory that contains customized filters
 	if [[ ! -d "$LOGSTASH_PATH/patterns" ]]; then
 	    echo "making dir $LOGSTASH_PATH/patterns"
 	    mkdir "$LOGSTASH_PATH/patterns"
 	    echo "Writing extra patterns in $LOGSTASH_PATH/patterns/extra_patterns"
-		echo 'SOURCE %{WORD}\.%{WORD}
+		echo 'SOURCE %{USER}\.%{WORD}
 		TIME_LOG %{MONTH} %{MONTHDAY} %{YEAR} %{TIME} %{WORD}
 		LOG_TYPE %{WORD}|(%{WORD}:%{WORD})' > $LOGSTASH_PATH/patterns/extra_patterns
 	fi
@@ -43,14 +39,6 @@ function start {
 	fi
 	$ELK_PATH/kibana-4.1.0-darwin-x64/bin/kibana >/dev/null 2>&1 &
 	$LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf >/dev/null 2>&1 &
-	#if [[ $FLAG == 1 ]]; then
-		#$LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf >/dev/null 2>&1 &
-	#	cat $LOG_PATH/*.s | $LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf
-	#else
-	#	$LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf < $LOG_PATH
-	#fi
-	#python $LOGSTASH_PATH/htbt.py
-	#cat $LOG_PATH/*.log | $LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf
 	echo "Loading..."
 	sleep 30
 	#python $LOGSTASH_PATH/test.py
