@@ -8,10 +8,12 @@ function start {
 	ELK_PATH="/usr/local/elk"
 	if [[ -d $LOG_PATH ]]; then
 	    echo "$LOG_PATH is a directory"
-	    sed -i '' "s|	path => .*|	path => $LOG_PATH/\*.log|" $LOGSTASH_PATH/general.conf
+	    sed -i '' "s|	path => .*|	path => \"$LOG_PATH/\*.log\"|" $LOGSTASH_PATH/general.conf
+	    LINENUM=$(cat $LOG_PATH/*.log | wc -l)
 	elif [[ -f $LOG_PATH ]]; then
 	    echo "$LOG_PATH is a file"
-	    sed -i '' "s|	path => .*|	path => $LOG_PATH|" $LOGSTASH_PATH/general.conf
+	    sed -i '' "s|	path => .*|	path => \"$LOG_PATH\"|" $LOGSTASH_PATH/general.conf
+	    LINENUM=$(cat $LOG_PATH | wc -l)
 	else
 	    echo "$LOG_PATH is not valid"
 	    exit 1
@@ -39,9 +41,8 @@ function start {
 	fi
 	$ELK_PATH/kibana-4.1.0-darwin-x64/bin/kibana >/dev/null 2>&1 &
 	$LOGSTASH_PATH/bin/logstash -f $LOGSTASH_PATH/general.conf >/dev/null 2>&1 &
-	echo "Loading..."
-	sleep 30
-	#python $LOGSTASH_PATH/test.py
+	echo "$LINENUM" | python $LOGSTASH_PATH/check.py
+	python $LOGSTASH_PATH/test.py
 	echo "ELK stack started!"
 	echo "Go to browser and type following url's to see ELK working:"
 	echo "For Elasticsearch: localhost:9200/_search?pretty"

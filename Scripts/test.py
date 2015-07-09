@@ -19,7 +19,13 @@ x = es.search(index="logstash-*",size=1,body={"sort":[{"data_objects" : {"order"
 y = x['hits']['hits']
 lo_dataobj = y[0]['_source']['data_objects']
 
-
+#Getting maximum and minimum values for other htbt diff
+x = es.search(index="logstash-*",size=1,body={"sort":[{"other_htbt_diff" : {"order" : "desc"}}]})
+y = x['hits']['hits']
+hi_other_htbt = y[0]['_source']['other_htbt_diff']
+x = es.search(index="logstash-*",size=1,body={"sort":[{"other_htbt_diff" : {"order" : "asc"}}]})
+y = x['hits']['hits']
+lo_other_htbt = y[0]['_source']['other_htbt_diff']
 
 #Getting different filenames
 x = es.search(index="logstash-*",body={"aggs": {"files":{"terms": {"field": "filename", "size": 0}}}})
@@ -115,7 +121,7 @@ data = {"title":"htbt-self","visState":"{\"aggs\":[{\"id\":\"1\",\"params\":{\"f
 es.create(index=".kibana",doc_type="visualization",id="htbt-self",body=data)
 
 #Other heartbeat diff viz
-data = {"title":"htbt-other","visState":"{\"aggs\":[{\"id\":\"1\",\"params\":{\"field\":\"other_htbt_diff\"},\"schema\":\"metric\",\"type\":\"avg\"},{\"id\":\"2\",\"params\":{\"customInterval\":\"2h\",\"extended_bounds\":{},\"field\":\"@timestamp\",\"interval\":\"auto\",\"min_doc_count\":1},\"schema\":\"segment\",\"type\":\"date_histogram\"},{\"id\":\"3\",\"params\":{\"filters\":["+filestring+"]},\"schema\":\"group\",\"type\":\"filters\"}],\"listeners\":{},\"params\":{\"addLegend\":true,\"addTimeMarker\":false,\"addTooltip\":true,\"defaultYExtents\":false,\"drawLinesBetweenPoints\":true,\"interpolate\":\"linear\",\"radiusRatio\":9,\"scale\":\"linear\",\"setYExtents\":false,\"shareYAxis\":true,\"showCircles\":true,\"smoothLines\":false,\"times\":[],\"yAxis\":{}},\"type\":\"line\"}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
+data = {"title":"htbt-other","visState":"{\"aggs\":[{\"id\":\"1\",\"params\":{\"field\":\"other_htbt_diff\"},\"schema\":\"metric\",\"type\":\"avg\"},{\"id\":\"2\",\"params\":{\"customInterval\":\"2h\",\"extended_bounds\":{},\"field\":\"@timestamp\",\"interval\":\"auto\",\"min_doc_count\":1},\"schema\":\"segment\",\"type\":\"date_histogram\"},{\"id\":\"3\",\"params\":{\"filters\":["+filestring+"]},\"schema\":\"group\",\"type\":\"filters\"}],\"listeners\":{},\"params\":{\"addLegend\":true,\"addTimeMarker\":false,\"addTooltip\":true,\"defaultYExtents\":false,\"drawLinesBetweenPoints\":true,\"interpolate\":\"linear\",\"radiusRatio\":9,\"scale\":\"linear\",\"setYExtents\":true,\"shareYAxis\":true,\"showCircles\":true,\"smoothLines\":false,\"times\":[],\"yAxis\":{\"max\":"+str(hi_other_htbt)+",\"min\":"+str(lo_other_htbt)+"}},\"type\":\"line\"}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
 es.create(index=".kibana",doc_type="visualization",id="htbt-other",body=data)
 
 #Sindex mem usage viz
