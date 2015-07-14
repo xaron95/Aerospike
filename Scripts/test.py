@@ -80,6 +80,31 @@ for i in range(0,len(namespaces)):
 	es.create(index=".kibana",doc_type="visualization",id="sindex-ns"+str(i+1)+"-viz",body=data)
 memorystring = memorystring+"{\"id\":\""+"memory-ns"+str(i+1)+"-viz"+"\",\"type\":\"visualization\",\"size_x\":12,\"size_y\":5,\"col\":1,\"row\":"+str(size[0]+(5*i))+"},{\"id\":\""+"disk-ns"+str(i+1)+"-viz"+"\",\"type\":\"visualization\",\"size_x\":12,\"size_y\":5,\"col\":1,\"row\":"+str(size[1]+(5*i))+"},{\"id\":\""+"sindex-ns"+str(i+1)+"-viz"+"\",\"type\":\"visualization\",\"size_x\":12,\"size_y\":6,\"col\":1,\"row\":"+str(size[2]+(5*i))+"}"
 
+#Getting source files and line numbers
+x = es.search(index="logstash-*",q="log_level:WARNING",body={"aggs": {"agg1": {"terms": {"field": "Source_file"},"aggs": {"agg2": {"terms": {"field": "Line_number"}}}}}})
+source_file = []
+lines = []
+y = x['aggregations']['agg1']['buckets']
+for z in y:
+  source_file.append(z['key'])
+  l = z['agg2']['buckets']
+  for m in l:
+  	lines.append(m['key'])
+
+sourcestring = ""
+for i in range(0,len(source_file)-1):
+  sourcestring = sourcestring+"{\"input\":{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"Source_file:\\\""+str(source_file[i])+"\\\"\"}}}},"
+sourcestring = sourcestring+"{\"input\":{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"Source_file:\\\""+str(source_file[-1])+"\\\"\"}}}}"
+
+linestring = ""
+for i in range(0,len(lines)-1):
+  linestring = linestring+"{\"input\":{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"Line_number:\\\""+str(lines[i])+"\\\"\"}}}},"
+linestring = linestring+"{\"input\":{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"Line_number:\\\""+str(lines[-1])+"\\\"\"}}}}"
+
+#Warning stats
+data = {"title":"warning-stats","visState":"{\"type\":\"pie\",\"params\":{\"shareYAxis\":true,\"addTooltip\":true,\"addLegend\":true,\"isDonut\":false},\"aggs\":[{\"id\":\"1\",\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"3\",\"type\":\"filters\",\"schema\":\"split\",\"params\":{\"filters\":[{\"input\":{\"query\":{\"query_string\":{\"query\":\"log_level:\\\"WARNING\\\"\",\"analyze_wildcard\":true}}}}],\"row\":true}},{\"id\":\"2\",\"type\":\"filters\",\"schema\":\"segment\",\"params\":{\"filters\":["+filestring+"]}},{\"id\":\"4\",\"type\":\"filters\",\"schema\":\"segment\",\"params\":{\"filters\":["+sourcestring+"]}},{\"id\":\"5\",\"type\":\"filters\",\"schema\":\"segment\",\"params\":{\"filters\":["+linestring+"]}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"query\":\"*\",\"analyze_wildcard\":true}},\"filter\":[]}"}}
+es.create(index=".kibana",doc_type="visualization",id="warning-stats",body=data)
+
 #Migrations viz
 data = {"title":"migrations-viz","visState":"{\"type\":\"line\",\"params\":{\"addLegend\":true,\"addTimeMarker\":false,\"addTooltip\":true,\"defaultYExtents\":false,\"drawLinesBetweenPoints\":true,\"interpolate\":\"linear\",\"radiusRatio\":9,\"scale\":\"linear\",\"setYExtents\":false,\"shareYAxis\":true,\"showCircles\":true,\"smoothLines\":false,\"times\":[],\"yAxis\":{}},\"aggs\":[{\"id\":\"1\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"incoming_mig\"}},{\"id\":\"2\",\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"@timestamp\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"type\":\"filters\",\"schema\":\"group\",\"params\":{\"filters\":["+filestring+"]}},{\"id\":\"4\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"outgoing_mig\"}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
 es.create(index=".kibana",doc_type="visualization",id="migrations-viz",body=data)
@@ -141,12 +166,16 @@ data = {"title":"cluster-viz","visState":"{\"type\":\"line\",\"params\":{\"addLe
 es.create(index=".kibana",doc_type="visualization",id="cluster-viz",body=data)
 
 #Other-graphs markdown
-data = {"title":"Other graphs","visState":"{\"type\":\"markdown\",\"params\":{\"markdown\":\"####_Other graphs_:\\n1. [Histograms][histdash]\\n2. [Memory usage][memdash]\\n\\n\\n[memdash]:http://localhost:5601/#/dashboard/memory_usage-dash?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:\'"+str(lo)+"\',mode:absolute,to:\'"+str(hi)+"\'))\\n[histdash]:http://localhost:5601/#/dashboard/hist-dash?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:\'"+str(lo)+"\',mode:absolute,to:\'"+str(hi)+"\'))\"},\"aggs\":[],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
+data = {"title":"Other graphs","visState":"{\"type\":\"markdown\",\"params\":{\"markdown\":\"####_Other graphs_:\\n1. [Warning stats][warndash] \\n2. [Histograms][histdash]\\n3. [Memory usage][memdash]\\n\\n\\n[memdash]:http://localhost:5601/#/dashboard/memory_usage-dash?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:\'"+str(lo)+"\',mode:absolute,to:\'"+str(hi)+"\'))\\n[histdash]:http://localhost:5601/#/dashboard/hist-dash?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:\'"+str(lo)+"\',mode:absolute,to:\'"+str(hi)+"\'))\\n[warndash]:http://localhost:5601/#/dashboard/warning-dash?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:\'"+str(lo)+"\',mode:absolute,to:\'"+str(hi)+"\'))\"},\"aggs\":[],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
 es.create(index=".kibana",doc_type="visualization",id="Other-graphs",body=data)
 
 #Network-graphs markdown
 data = {"title":"Network graphs","visState":"{\"aggs\":[],\"listeners\":{},\"params\":{\"markdown\":\"####_Network graphs_:\\n1. [Heartbeats][htbtdash]\\n2. [Migrations][migdash]\\n\\n\\n[htbtdash]:http://localhost:5601/#/dashboard/htbt-dash?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:\'"+str(lo)+"\',mode:absolute,to:\'"+str(hi)+"\'))\\n[migdash]:http://localhost:5601/#/dashboard/migrations-dash?_g=(refreshInterval:(display:Off,pause:!f,section:0,value:0),time:(from:\'"+str(lo)+"\',mode:absolute,to:\'"+str(hi)+"\'))\"},\"type\":\"markdown\"}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
 es.create(index=".kibana",doc_type="visualization",id="Network-graphs",body=data)
+
+#Warning Dashboard
+data = {"title":"warning-dash","hits":0,"description":"","panelsJSON":"[{\"id\":\"warning-stats\",\"type\":\"visualization\",\"size_x\":12,\"size_y\":8,\"col\":1,\"row\":1}]","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"filter\":[{\"query\":{\"query_string\":{\"query\":\"*\",\"analyze_wildcard\":true}}}]}"}}
+es.create(index=".kibana",doc_type="dashboard",id="warning-dash",body=data)
 
 #Memory Usage Dashboard
 data = {"title":"memory_usage-dash","hits":0,"description":"","panelsJSON":"["+memorystring+"]","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"filter\":[{\"query\":{\"query_string\":{\"query\":\"*\",\"analyze_wildcard\":true}}}]}"}}
