@@ -80,8 +80,8 @@ for i in range(0,len(namespaces)):
 	es.create(index=".kibana",doc_type="visualization",id="sindex-ns"+str(i+1)+"-viz",body=data)
 memorystring = memorystring+"{\"id\":\""+"memory-ns"+str(i+1)+"-viz"+"\",\"type\":\"visualization\",\"size_x\":12,\"size_y\":5,\"col\":1,\"row\":"+str(size[0]+(5*i))+"},{\"id\":\""+"disk-ns"+str(i+1)+"-viz"+"\",\"type\":\"visualization\",\"size_x\":12,\"size_y\":5,\"col\":1,\"row\":"+str(size[1]+(5*i))+"},{\"id\":\""+"sindex-ns"+str(i+1)+"-viz"+"\",\"type\":\"visualization\",\"size_x\":12,\"size_y\":6,\"col\":1,\"row\":"+str(size[2]+(5*i))+"}"
 
-#Getting source files and line numbers
-x = es.search(index="logstash-*",q="log_level:WARNING",body={"aggs": {"agg1": {"terms": {"field": "Source_file"},"aggs": {"agg2": {"terms": {"field": "Line_number"}}}}}})
+'''#Getting source files and line numbers
+x = es.search(index="logstash-*",q="log_level:INFO",body={"aggs": {"agg1": {"terms": {"field": "Source_file"},"aggs": {"agg2": {"terms": {"field": "Line_number"}}}}}})
 source_file = []
 lines = []
 y = x['aggregations']['agg1']['buckets']
@@ -100,10 +100,50 @@ linestring = ""
 for i in range(0,len(lines)-1):
   linestring = linestring+"{\"input\":{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"Line_number:\\\""+str(lines[i])+"\\\"\"}}}},"
 linestring = linestring+"{\"input\":{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"Line_number:\\\""+str(lines[-1])+"\\\"\"}}}}"
-
-#Warning stats
-data = {"title":"warning-stats","visState":"{\"type\":\"pie\",\"params\":{\"shareYAxis\":true,\"addTooltip\":true,\"addLegend\":true,\"isDonut\":false},\"aggs\":[{\"id\":\"1\",\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"3\",\"type\":\"filters\",\"schema\":\"split\",\"params\":{\"filters\":[{\"input\":{\"query\":{\"query_string\":{\"query\":\"log_level:\\\"WARNING\\\"\",\"analyze_wildcard\":true}}}}],\"row\":true}},{\"id\":\"2\",\"type\":\"filters\",\"schema\":\"segment\",\"params\":{\"filters\":["+filestring+"]}},{\"id\":\"4\",\"type\":\"filters\",\"schema\":\"segment\",\"params\":{\"filters\":["+sourcestring+"]}},{\"id\":\"5\",\"type\":\"filters\",\"schema\":\"segment\",\"params\":{\"filters\":["+linestring+"]}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"query\":\"*\",\"analyze_wildcard\":true}},\"filter\":[]}"}}
+'''
+#Grouping filename,Source file and line number for warning messages
+x = es.search(index="logstash-*",q="log_level:WARNING",body={
+    "aggs": {
+      "agg1": {
+        "terms": {
+          "field": "filename"
+        },
+      "aggs": {
+        "agg2": {
+          "terms": {
+            "field": "Source_file"
+          },
+          "aggs": {
+            "agg3": {
+              "terms": {
+                "field": "Line_number"
+              }
+            }
+          }          
+        }
+      }
+    }
+  }
+})
+temp = []
+y = x['aggregations']['agg1']['buckets']
+for z in y:
+  #print z['key'],z['doc_count']
+  a = z['agg2']['buckets']
+  for i in a:
+    #print i['key'],i['doc_count']
+    b = i['agg3']['buckets']
+    for j in b:
+      #print j['key'],j['doc_count']
+      temp.append([z['key'],i['key'],j['key'],j['doc_count']])
+statstring=""
+for i in range(0,len(temp)):
+  statstring = statstring+"|"+temp[i][0]+"|"+temp[i][1]+"|"+str(temp[i][2])+"|"+str(temp[i][3])+"|\\n"
+data = {"title":"warning-stats","visState":"{\"type\":\"markdown\",\"params\":{\"markdown\":\"|&nbsp;&nbsp;&nbsp;Filename&nbsp;&nbsp;&nbsp;|&nbsp; &nbsp; &nbsp;Source file &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp; Line number &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp;Count &nbsp; &nbsp; &nbsp; |\\n|:-----------:|:-------------:|:----------------:|:-----------:|\\n"+statstring+"\\n\"},\"aggs\":[],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
 es.create(index=".kibana",doc_type="visualization",id="warning-stats",body=data)
+#Warning stats
+#data = {"title":"warning-stats","visState":"{\"type\":\"table\",\"params\":{\"perPage\":20,\"showPartialRows\":false,\"showMeticsAtAllLevels\":false},\"aggs\":[{\"id\":\"1\",\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"type\":\"filters\",\"schema\":\"split\",\"params\":{\"filters\":[{\"input\":{\"query\":{\"query_string\":{\"query\":\"log_level:\\\"INFO\\\"\",\"analyze_wildcard\":true}}}}],\"row\":true}},{\"id\":\"3\",\"type\":\"filters\",\"schema\":\"bucket\",\"params\":{\"filters\":["+filestring+"]}},{\"id\":\"4\",\"type\":\"filters\",\"schema\":\"bucket\",\"params\":{\"filters\":["+sourcestring+"]}},{\"id\":\"5\",\"type\":\"filters\",\"schema\":\"bucket\",\"params\":{\"filters\":["+linestring+"]}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"query\":\"*\",\"analyze_wildcard\":true}},\"filter\":[]}"}}
+#es.create(index=".kibana",doc_type="visualization",id="warning-stats",body=data)
 
 #Migrations viz
 data = {"title":"migrations-viz","visState":"{\"type\":\"line\",\"params\":{\"addLegend\":true,\"addTimeMarker\":false,\"addTooltip\":true,\"defaultYExtents\":false,\"drawLinesBetweenPoints\":true,\"interpolate\":\"linear\",\"radiusRatio\":9,\"scale\":\"linear\",\"setYExtents\":false,\"shareYAxis\":true,\"showCircles\":true,\"smoothLines\":false,\"times\":[],\"yAxis\":{}},\"aggs\":[{\"id\":\"1\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"incoming_mig\"}},{\"id\":\"2\",\"type\":\"date_histogram\",\"schema\":\"segment\",\"params\":{\"field\":\"@timestamp\",\"interval\":\"auto\",\"customInterval\":\"2h\",\"min_doc_count\":1,\"extended_bounds\":{}}},{\"id\":\"3\",\"type\":\"filters\",\"schema\":\"group\",\"params\":{\"filters\":["+filestring+"]}},{\"id\":\"4\",\"type\":\"avg\",\"schema\":\"metric\",\"params\":{\"field\":\"outgoing_mig\"}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
