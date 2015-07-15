@@ -117,7 +117,14 @@ x = es.search(index="logstash-*",q="log_level:WARNING",body={
             "agg3": {
               "terms": {
                 "field": "Line_number"
-              }
+              },
+          "aggs": {
+            "agg4": {
+              "terms": {
+                "field": "warning_msg.raw"
+                }
+               }
+              }  
             }
           }          
         }
@@ -135,11 +142,11 @@ for z in y:
     b = i['agg3']['buckets']
     for j in b:
       #print j['key'],j['doc_count']
-      temp.append([z['key'],i['key'],j['key'],j['doc_count']])
+      temp.append([z['key'],i['key'],j['key'],j['doc_count'],j['agg4']['buckets'][0]['key']])
 statstring=""
 for i in range(0,len(temp)):
-  statstring = statstring+"|"+temp[i][0]+"|"+temp[i][1]+"|"+str(temp[i][2])+"|"+str(temp[i][3])+"|\\n"
-data = {"title":"warning-stats","visState":"{\"type\":\"markdown\",\"params\":{\"markdown\":\"|&nbsp;&nbsp;&nbsp;Filename&nbsp;&nbsp;&nbsp;|&nbsp; &nbsp; &nbsp;Source file &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp; Line number &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp;Count &nbsp; &nbsp; &nbsp; |\\n|:-----------:|:-------------:|:----------------:|:-----------:|\\n"+statstring+"\\n\"},\"aggs\":[],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
+  statstring = statstring+"|"+temp[i][0]+"|"+temp[i][1]+"|"+str(temp[i][2])+"|"+str(temp[i][3])+"|"+str(temp[i][4])+"|\\n"
+data = {"title":"warning-stats","visState":"{\"type\":\"markdown\",\"params\":{\"markdown\":\"|&nbsp;&nbsp;&nbsp;Filename&nbsp;&nbsp;&nbsp;|&nbsp; &nbsp; &nbsp;Source file &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp; Line number &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp;Count &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp; Warning message &nbsp;&nbsp;&nbsp;|\\n|:-----------:|:-------------:|:----------------:|:-----------:|:-----------:|\\n"+statstring+"\\n\"},\"aggs\":[],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}},\"filter\":[]}"}}
 es.create(index=".kibana",doc_type="visualization",id="warning-stats",body=data)
 #Warning stats
 #data = {"title":"warning-stats","visState":"{\"type\":\"table\",\"params\":{\"perPage\":20,\"showPartialRows\":false,\"showMeticsAtAllLevels\":false},\"aggs\":[{\"id\":\"1\",\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"type\":\"filters\",\"schema\":\"split\",\"params\":{\"filters\":[{\"input\":{\"query\":{\"query_string\":{\"query\":\"log_level:\\\"INFO\\\"\",\"analyze_wildcard\":true}}}}],\"row\":true}},{\"id\":\"3\",\"type\":\"filters\",\"schema\":\"bucket\",\"params\":{\"filters\":["+filestring+"]}},{\"id\":\"4\",\"type\":\"filters\",\"schema\":\"bucket\",\"params\":{\"filters\":["+sourcestring+"]}},{\"id\":\"5\",\"type\":\"filters\",\"schema\":\"bucket\",\"params\":{\"filters\":["+linestring+"]}}],\"listeners\":{}}","description":"","version":1,"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"index\":\"logstash-*\",\"query\":{\"query_string\":{\"query\":\"*\",\"analyze_wildcard\":true}},\"filter\":[]}"}}
