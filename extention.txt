@@ -1,0 +1,38 @@
+To add a new parameter and make it available for visualisation, you have to edit two files,that is, general.conf(for logstash) and base.py(for visualisation in kibana).
+
+Logstash:
+1.You first have to do things similar as grep does, to get all the log lines containing required parameter. So your basic structure looks like below in filter category in general.conf:
+	else if "search_string" in [log_message]{
+		grok{
+			match => {
+				"log_message" => "Regex to parse line"
+			}
+		}
+		ruby{
+			code => "event['flag'] = Some number"		#This will help you to debug
+		}
+	}
+
+2. For writing Regex you can refer to https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns for prebuilt regex.
+Example:
+	Log line: These are parameter values:2345 and 45.34
+	Regex: %{WORD} %{WORD} %{WORD} %{WORD}:%{NUMBER:parameter1:int} %{WORD} %{NUMBER:parameter2:int}
+In above example 2345 will be stored in a field "parameter1" of type int and 45.34 will be stored in "parameter2" of type int in all of the log lines of above type. Here WORD and NUMBER are predefined names for word and number respectively as you can see in the url provided above.
+If you want to define your own patterns you can go to patterns directory and make some as shown in extra patterns.
+
+3. For doing diff of a field you can add following filter:
+	Example:
+	simpledelta{
+			input_field => "self_htbt"
+			output_field => "self_htbt_diff"
+			common_field => "filename"
+	}
+Here input field takes the fieldname you want to calculate difference on. Output field requires a new fieldname that stores the difference of fields. If you have multiple files put common_field as filename so that calculation of diff do not cross across different files.
+
+Kibana visualisation:
+There are two ways:
+1.Static:Directly make visualisations in kibana by using the fields. You can see the documentaton of kibana in www.elastic.co and explore different visualisations to see which fits your purpose. But in it you have to manually put all the filters and other parameters.
+2.Dynamic:In this also you have to make an example visualisation,save it and look at the structure of it either in elasticsearch or in kibana you have to go to settings>objects>visualisations and go to the visualisation you saved and edit. There you will get the basic format requires for visualisation to be created. You can compare the prebuilt dashboards and visualisations in base.py with the above structure to get the idea of how to code it.
+For querying in elasticsearch look at the documentation of elasticsearch in www.elastic.co.
+
+So you have to basically Experiment->Execute->Improve and repeat.

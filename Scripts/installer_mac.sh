@@ -34,14 +34,41 @@ if [[ ! -d /usr/local/elk ]]; then
 	tar -zxvf logstash-1.5.0.tar.gz -C /usr/local/elk
 	chown -R $USER /usr/local/elk/logstash-1.5.0/
 	rm -rf logstash-1.5.0.tar.gz
-	curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.1.tar.gz
-	tar -zxvf elasticsearch-1.5.1.tar.gz -C /usr/local/elk
-	chown -R $USER /usr/local/elk/elasticsearch-1.5.1/
-	rm -rf elasticsearch-1.5.1.tar.gz
+	echo "Logstash installation complete"
+	curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.6.0.tar.gz
+	tar -zxvf elasticsearch-1.6.0.tar.gz -C /usr/local/elk
+	chown -R $USER /usr/local/elk/elasticsearch-1.6.0/
+	rm -rf elasticsearch-1.6.0.tar.gz
+	echo "Elasticsearch installation complete"
 	curl -L -O https://download.elastic.co/kibana/kibana/kibana-4.1.0-darwin-x64.tar.gz
 	tar -zxvf kibana-4.1.0-darwin-x64.tar.gz -C /usr/local/elk
 	chown -R $USER /usr/local/elk/kibana-4.1.0-darwin-x64/
 	rm -rf kibana-4.1.0-darwin-x64.tar.gz
+	echo "Kibana installation complete"
 else
-	echo "ELK stack already installed"
+	if [[ ! -d /usr/local/elk/logstash-1.5.0 ]]; then
+		curl -L -O https://download.elasticsearch.org/logstash/logstash/logstash-1.5.0.tar.gz
+		tar -zxvf logstash-1.5.0.tar.gz -C /usr/local/elk
+		chown -R $USER /usr/local/elk/logstash-1.5.0/
+		rm -rf logstash-1.5.0.tar.gz
+	else
+		echo "Logstash is already installed"
+	fi
+
+	if [[ ! -d /usr/local/elk/elasticsearch-1.6.0 ]]; then
+		curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.6.0.tar.gz
+		tar -zxvf elasticsearch-1.6.0.tar.gz -C /usr/local/elk
+		chown -R $USER /usr/local/elk/elasticsearch-1.6.0/
+		rm -rf elasticsearch-1.6.0.tar.gz
+	else
+		echo "Elasticsearch is already installed"
+	fi
+	if [[ ! -d /usr/local/elk/kibana-4.1.0-darwin-x64 ]]; then
+		curl -L -O https://download.elastic.co/kibana/kibana/kibana-4.1.0-darwin-x64.tar.gz
+		tar -zxvf kibana-4.1.0-darwin-x64.tar.gz -C /usr/local/elk
+		chown -R $USER /usr/local/elk/kibana-4.1.0-darwin-x64/
+		rm -rf kibana-4.1.0-darwin-x64.tar.gz
+	else
+		echo "Kibana is already installed"
+	fi
 fi
