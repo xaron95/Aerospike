@@ -6,7 +6,8 @@ Put general.conf,patterns directory,base.py and check.py in logstash folder.
 Install gem by executing /usr/local/elk/logstash-1.5.0/bin/plugin install Ruby_gems/logstash-filter-simpledelta-0.2.0.gem.
 To install python elasticsearch api use pip install elasticsearch.
 
-Run the running script run_elk.sh.
+Run the running script run_elk.sh by bash run_elk.sh start.
+You can stop it using bash run_elk.sh stop or restart it using bash run_elk.sh restart.
 
 Go to kibana page, that is, http://localhost:9200
 Click Create
